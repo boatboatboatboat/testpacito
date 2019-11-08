@@ -149,8 +149,9 @@ pub mod printf_tests {
 			);
 			assert_eq!(
 				res, expected_res as i32,
-				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n\n",
-				tester, "yours:", res, "libc:", expected_res
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
 			);
 		}
 		#[test]
@@ -169,8 +170,9 @@ pub mod printf_tests {
 			);
 			assert_eq!(
 				res, expected_res as i32,
-				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n\n",
-				tester, "yours:", res, "libc:", expected_res
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
 			);
 		}
 		#[test]
@@ -194,8 +196,9 @@ pub mod printf_tests {
 			);
 			assert_eq!(
 				res, expected_res as i32,
-				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n\n",
-				tester, "yours:", res, "libc:", expected_res
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
 			);
 		}
 		
@@ -220,8 +223,9 @@ pub mod printf_tests {
 			);
 			assert_eq!(
 				res, expected_res as i32,
-				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n\n",
-				tester, "yours:", res, "libc:", expected_res
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
 			);
 		}
 		#[test]
@@ -244,8 +248,9 @@ pub mod printf_tests {
 			);
 			assert_eq!(
 				res, expected_res as i32,
-				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n\n",
-				tester, "yours:", res, "libc:", expected_res
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
 			);
 		}
 		#[test]
@@ -267,8 +272,9 @@ pub mod printf_tests {
 			);
 			assert_eq!(
 				res, expected_res as i32,
-				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n\n",
-				tester, "yours:", res, "libc:", expected_res
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
 			);
 		}
 		#[test]
@@ -290,8 +296,9 @@ pub mod printf_tests {
 			);
 			assert_eq!(
 				res, expected_res as i32,
-				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n\n",
-				tester, "yours:", res, "libc:", expected_res
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
 			);
 		}
 		#[test]
@@ -313,8 +320,9 @@ pub mod printf_tests {
 			);
 			assert_eq!(
 				res, expected_res as i32,
-				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n\n",
-				tester, "yours:", res, "libc:", expected_res
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
 			);
 		}
 		#[test]
@@ -336,9 +344,163 @@ pub mod printf_tests {
 			);
 			assert_eq!(
 				res, expected_res as i32,
-				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n\n",
-				tester, "yours:", res, "libc:", expected_res
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
 			);
+		}
+		#[test]
+		fn test_pointer_specifier() {
+			let expected_output = "hello 0x0 0x69 0xdeadbeef";
+			let expected_res = expected_output.len();
+			let tester = CString::new("hello %p %p %p").unwrap();
+			let prebuf = BufferRedirect::stdout().unwrap();
+			let res = unsafe {ft_printf(
+				tester.as_ptr(),
+				0 as *mut libc::c_void,
+				0x69 as *mut libc::c_void,
+				0xdeadbeef as *mut libc::c_void
+			)};
+			let mut prebuf_res = String::new();
+			prebuf.into_inner().read_to_string(&mut prebuf_res).unwrap();
+			assert_eq!(
+				prebuf_res, expected_output,
+				"\n\nft_printf({:?}) output differs:\n{: <10}{:?}\n{: <10}{:?}\n\n",
+				tester, "yours:", prebuf_res, "libc:", expected_output
+			);
+			assert_eq!(
+				res, expected_res as i32,
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
+			);
+		}
+		#[test]
+		fn test_random() {
+			let expected_output = "0x00xffffffffffffffff%p%p%smallmall";
+			let expected_res = expected_output.len();
+			let tester = CString::new("%p%p%small").unwrap();
+			let prebuf = BufferRedirect::stdout().unwrap();
+			let res = unsafe {ft_printf(
+				tester.as_ptr(),
+				0 as *mut libc::c_void,
+				usize::max_value() as *mut libc::c_void,
+				tester.as_ptr()
+			)};
+			let mut prebuf_res = String::new();
+			prebuf.into_inner().read_to_string(&mut prebuf_res).unwrap();
+			assert_eq!(
+				prebuf_res, expected_output,
+				"\n\nft_printf({:?}) output differs:\n{: <10}{:?}\n{: <10}{:?}\n\n",
+				tester, "yours:", prebuf_res, "libc:", expected_output
+			);
+			assert_eq!(
+				res, expected_res as i32,
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
+			);
+		}
+		#[test]
+		fn test_stupid_flags() {
+			let expected_output = "000123";
+			let expected_res = expected_output.len();
+			let tester = CString::new("%+-+-  +-+-  06d").unwrap();
+			let prebuf = BufferRedirect::stdout().unwrap();
+			let res = unsafe {ft_printf(
+				tester.as_ptr(),
+				123
+			)};
+			let mut prebuf_res = String::new();
+			prebuf.into_inner().read_to_string(&mut prebuf_res).unwrap();
+			assert_eq!(
+				prebuf_res, expected_output,
+				"\n\nft_printf({:?}) output differs:\n{: <10}{:?}\n{: <10}{:?}\n\n",
+				tester, "yours:", prebuf_res, "libc:", expected_output
+			);
+			assert_eq!(
+				res, expected_res as i32,
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
+			);
+		}
+		#[test]
+		fn test_stupid_flags2() {
+			let expected_output = " d";
+			let expected_res = expected_output.len();
+			let tester = CString::new("%0 d").unwrap();
+			let prebuf = BufferRedirect::stdout().unwrap();
+			let res = unsafe {ft_printf(
+				tester.as_ptr(),
+				123
+			)};
+			let mut prebuf_res = String::new();
+			prebuf.into_inner().read_to_string(&mut prebuf_res).unwrap();
+			assert_eq!(
+				prebuf_res, expected_output,
+				"\n\nft_printf({:?}) output differs:\n{: <10}{:?}\n{: <10}{:?}\n\n",
+				tester, "yours:", prebuf_res, "libc:", expected_output
+			);
+			assert_eq!(
+				res, expected_res as i32,
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
+			);
+		}
+		#[test]
+		fn test_stupid_flags3() {
+			let expected_output = "123";
+			let expected_res = expected_output.len();
+			let tester = CString::new("% 0d").unwrap();
+			let prebuf = BufferRedirect::stdout().unwrap();
+			let res = unsafe {ft_printf(
+				tester.as_ptr(),
+				123
+			)};
+			let mut prebuf_res = String::new();
+			prebuf.into_inner().read_to_string(&mut prebuf_res).unwrap();
+			assert_eq!(
+				prebuf_res, expected_output,
+				"\n\nft_printf({:?}) output differs:\n{: <10}{:?}\n{: <10}{:?}\n\n",
+				tester, "yours:", prebuf_res, "libc:", expected_output
+			);
+			assert_eq!(
+				res, expected_res as i32,
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
+			);
+		}
+		#[test]
+		fn test_null_specifier() {
+			let expected_output = "";
+			let expected_res = expected_output.len();
+			let tester = CString::new("%").unwrap();
+			let prebuf = BufferRedirect::stdout().unwrap();
+			let res = unsafe {ft_printf(
+				tester.as_ptr()
+			)};
+			let mut prebuf_res = String::new();
+			prebuf.into_inner().read_to_string(&mut prebuf_res).unwrap();
+			assert_eq!(
+				prebuf_res, expected_output,
+				"\n\nft_printf({:?}) output differs:\n{: <10}{:?}\n{: <10}{:?}\n\n",
+				tester, "yours:", prebuf_res, "libc:", expected_output
+			);
+			assert_eq!(
+				res, expected_res as i32,
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
+			);
+		}
+
+		#[test]
+		#[should_panic]
+		fn test_printf_segfault() {
+			unsafe { ft_printf(0 as *const c_char ) };
 		}
 	}
 }
