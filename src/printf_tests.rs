@@ -474,6 +474,54 @@ pub mod printf_tests {
 			);
 		}
 		#[test]
+		fn test_stupid_flags4() {
+			let expected_output = "+1d";
+			let expected_res = expected_output.len();
+			let tester = CString::new("%0+1d").unwrap();
+			let prebuf = BufferRedirect::stdout().unwrap();
+			let res = unsafe {ft_printf(
+				tester.as_ptr(),
+				123
+			)};
+			let mut prebuf_res = String::new();
+			prebuf.into_inner().read_to_string(&mut prebuf_res).unwrap();
+			assert_eq!(
+				prebuf_res, expected_output,
+				"\n\nft_printf({:?}) output differs:\n{: <10}{:?}\n{: <10}{:?}\n\n",
+				tester, "yours:", prebuf_res, "libc:", expected_output
+			);
+			assert_eq!(
+				res, expected_res as i32,
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
+			);
+		}
+		#[test]
+		fn test_plus_flag() {
+			let expected_output = "+123";
+			let expected_res = expected_output.len();
+			let tester = CString::new("%+d").unwrap();
+			let prebuf = BufferRedirect::stdout().unwrap();
+			let res = unsafe {ft_printf(
+				tester.as_ptr(),
+				123
+			)};
+			let mut prebuf_res = String::new();
+			prebuf.into_inner().read_to_string(&mut prebuf_res).unwrap();
+			assert_eq!(
+				prebuf_res, expected_output,
+				"\n\nft_printf({:?}) output differs:\n{: <10}{:?}\n{: <10}{:?}\n\n",
+				tester, "yours:", prebuf_res, "libc:", expected_output
+			);
+			assert_eq!(
+				res, expected_res as i32,
+				"\n\nft_printf({:?}) return value differs:\n{: <10}{}\n{: <10}{}\n{: <10}{}\n{: <10}{}\n\n",
+				tester, "yours:", res, "libc:", expected_res,
+				"your out:", prebuf_res, "libc out:", expected_output
+			);
+		}
+		#[test]
 		fn test_null_specifier() {
 			let expected_output = "";
 			let expected_res = expected_output.len();
