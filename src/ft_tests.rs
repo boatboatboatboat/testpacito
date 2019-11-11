@@ -1,4 +1,4 @@
-use libc::{size_t, c_char, c_void};
+use libc::{size_t, c_char, c_void, c_int};
 use std::ffi::CString;
 
 #[link(name = "ft")]
@@ -9,6 +9,17 @@ extern {
 	fn ft_strmapi(s: *const c_char, f: extern fn(u32, c_char) -> c_char) -> *mut c_char;
 	fn ft_split(s: *const c_char, c: c_char) -> *mut *mut c_char;
 	fn ft_memset(s: *mut c_void, c: i32, l: size_t) -> *mut c_void;
+	fn ft_strrchr(s: *const c_char, c: i32) -> *mut c_char;
+	fn ft_strchr(s: *const c_char, c: i32) -> *mut c_char;
+	fn ft_strncmp(s1: *const c_char, s2: *const c_char, n: size_t) -> c_int;
+	fn ft_strtrim(s1: *const c_char, set: *const c_char) -> *mut c_char;
+	fn ft_strlen(s: *const c_char) -> size_t;
+	fn ft_putchar_fd(c: c_char, fd: c_int);
+	fn ft_putendl_fd(s: *const c_char, fd: c_int); // actually *mut c_char
+	fn ft_putstr_fd(s: *const c_char, fd: c_int); // actually *mut c_char
+	fn ft_putnbr_fd(n: c_int, fd: c_int);
+	fn ft_tolower(chr: i32) -> i32;
+	fn ft_toupper(chr: i32) -> i32;
 	fn ft_isalnum(chr: i32) -> i32;
 	fn ft_isalpha(chr: i32) -> i32;
 	fn ft_isdigit(chr: i32) -> i32;
@@ -26,7 +37,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_basic_1() {
 			let tester = CString::new("123456").unwrap();
-			let real = 123456;
+			let real = unsafe { libc::atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -37,7 +48,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_basic_2() {
 			let tester = CString::new("42069").unwrap();
-			let real = 42069;
+			let real = unsafe { libc::atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -48,7 +59,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_extremes_1() {
 			let tester = CString::new(i32::max_value().to_string()).unwrap();
-			let real = i32::max_value();
+			let real = unsafe { libc::atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -59,7 +70,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_extremes_2() {
 			let tester = CString::new(i32::min_value().to_string()).unwrap();
-			let real = i32::min_value();
+			let real = unsafe { libc::atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -70,7 +81,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_extremes_3() {
 			let tester = CString::new(i64::min_value().to_string()).unwrap();
-			let real = 0;
+			let real = unsafe { libc::atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -81,7 +92,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_extremes_4() {
 			let tester = CString::new(i64::max_value().to_string()).unwrap();
-			let real = -1;
+			let real = unsafe { libc::atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -92,7 +103,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_skipping_1() {
 			let tester = CString::new("+123").unwrap();
-			let real = 123;
+			let real = unsafe { libc::atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -103,7 +114,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_skipping_2() {
 			let tester = CString::new("+-123").unwrap();
-			let real = 0;
+			let real = unsafe { libc::atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -114,7 +125,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_skipping_3() {
 			let tester = CString::new("       +123 123").unwrap();
-			let real = 123;
+			let real = unsafe { libc::atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -125,7 +136,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_skipping_4() {
 			let tester = CString::new("-42069").unwrap();
-			let real = -42069;
+			let real = unsafe { libc::atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -136,7 +147,7 @@ pub mod ft_tests {
 		#[test]
 		fn test_skipping_5() {
 			let tester = CString::new("\t\n\r\x0b\x0c 987").unwrap();
-			let real = 987;
+			let real = unsafe { ft_atoi(tester.as_ptr()) };
 			let ret = unsafe { ft_atoi(tester.as_ptr()) };
 			assert_eq!(
 				ret, real,
@@ -198,7 +209,8 @@ pub mod ft_tests {
 			#[test]
 			fn memset_basic_1() {
 				let mut real: Box<[c_char; 10]> = Box::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-				let compare: [c_char; 10] = [6, 6, 6, 6, 6, 6, 6, 6, 6, 10];
+				let mut compare: Box<[c_char; 10]> = Box::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+				unsafe { libc::memset(compare.as_mut_ptr() as *mut c_void, 6, 9) };
 				let pres = unsafe { ft_memset(real.as_mut_ptr() as *mut c_void, 6, 9) };
 				assert!(
 					real.iter().zip(compare.iter()).all(|(a, b)| a==b),
@@ -216,7 +228,8 @@ pub mod ft_tests {
 			#[test]
 			fn memset_basic_2() {
 				let mut real: Box<[c_char; 10]> = Box::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-				let compare: [c_char; 10] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+				let mut compare: Box<[c_char; 10]> = Box::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+				unsafe { libc::memset(compare.as_mut_ptr() as *mut c_void, 42, 0) };
 				let pres = unsafe { ft_memset(real.as_mut_ptr() as *mut c_void, 42, 0) };
 				assert!(
 					real.iter().zip(compare.iter()).all(|(a, b)| a == b),
@@ -265,45 +278,36 @@ pub mod ft_tests {
 		use super::*;
 		#[test]
 		fn test_isalpha() {
-			fn comparator(chr: i32) -> bool {
-				chr >= b'a' as i32 && chr <= b'z' as i32
-				|| chr >= b'A' as i32 && chr <= 'Z' as i32
-			}
-			for i in 0..420 {
-				let res = unsafe { ft_isalpha(i) };
+			for i in -1000..1000 {
+				let ft_res = unsafe { ft_isalpha(i) };
+				let lc_res = unsafe { libc::isalpha(i) };
 				assert_eq!(
-					res != 0, comparator(i),
-					"ft_isalpha({}) returned the wrong value",
+					lc_res, ft_res,
+					"ft_isalpha({}) returned the wrong value (lc, ft)",
 					i
 				)
 			}
 		}
 		#[test]
 		fn test_isalnum() {
-			fn comparator(chr: i32) -> bool {
-				chr >= b'a' as i32 && chr <= b'z' as i32
-				|| chr >= b'A' as i32 && chr <= 'Z' as i32
-				|| chr >= b'0' as i32 && chr <= '9' as i32
-			}
-			for i in 0..420 {
-				let res = unsafe { ft_isalnum(i) };
+			for i in -1000..1000 {
+				let ft_res = unsafe { ft_isalnum(i) };
+				let lc_res = unsafe { libc::isalnum(i) };
 				assert_eq!(
-					res != 0, comparator(i),
-					"ft_isalnum({}) returned the wrong value",
+					lc_res, ft_res,
+					"ft_isalnum({}) returned the wrong value (lc, ft)",
 					i
 				)
 			}
 		}
 		#[test]
 		fn test_isdigit() {
-			fn comparator(chr: i32) -> bool {
-				chr >= b'0' as i32 && chr <= '9' as i32
-			}
-			for i in 0..420 {
-				let res = unsafe { ft_isdigit(i) };
+			for i in -1000..1000 {
+				let ft_res = unsafe { ft_isdigit(i) };
+				let lc_res = unsafe { libc::isdigit(i) };
 				assert_eq!(
-					res != 0, comparator(i),
-					"ft_isdigit({}) returned the wrong value",
+					lc_res, ft_res,
+					"ft_isdigit({}) returned the wrong value (lc, ft)",
 					i
 				)
 			}
@@ -313,7 +317,7 @@ pub mod ft_tests {
 			fn comparator(chr: i32) -> bool {
 				chr >= 0x0 && chr <= 0x7f
 			}
-			for i in 0..420 {
+			for i in -1000..1000 {
 				let res = unsafe { ft_isascii(i) };
 				assert_eq!(
 					res != 0, comparator(i),
@@ -324,17 +328,271 @@ pub mod ft_tests {
 		}
 		#[test]
 		fn test_isprint() {
-			fn comparator(chr: i32) -> bool {
-				chr >= 0x20 && chr <= 0x7e
-			}
-			for i in 0..420 {
-				let res = unsafe { ft_isprint(i) };
+			for i in -1000..1000 {
+				let ft_res = unsafe { ft_isprint(i) };
+				let lc_res = unsafe { libc::isprint(i) };
 				assert_eq!(
-					res != 0, comparator(i),
-					"ft_isprint({}) returned the wrong value",
+					lc_res, ft_res,
+					"ft_isprint({}) returned the wrong value (lc, ft)",
 					i
 				)
 			}
+		}
+		#[test]
+		fn test_toupper() {
+			for i in -1000..1000 {
+				let ft_res = unsafe { ft_toupper(i) };
+				let lc_res = unsafe { libc::toupper(i) };
+				assert_eq!(
+					lc_res, ft_res,
+					"ft_toupper({}) returned the wrong value (lc, ft)",
+					i
+				)
+			}
+		}
+		#[test]
+		fn test_tolower() {
+			for i in -1000..1000 {
+				let ft_res = unsafe { ft_tolower(i) };
+				let lc_res = unsafe { libc::tolower(i) };
+				assert_eq!(
+					lc_res, ft_res,
+					"ft_toupper({}) returned the wrong value (lc, ft)",
+					i
+				)
+			}
+		}
+	}
+	
+	#[cfg(test)]
+	mod ft_strlen {
+		use super::*;
+		rusty_fork_test! {
+			#[test]
+			fn strlen_test() {
+				let input = CString::new("").unwrap();
+				let ft_res = unsafe {
+					ft_strlen(input.as_ptr());
+				};
+				let lc_res = unsafe {
+					libc::strlen(input.as_ptr());
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strchr({:?}) result differs (ft, lc)",
+					input.to_string_lossy()
+				);
+			}
+			#[test]
+			fn strlen_test2() {
+				let input = CString::new("a").unwrap();
+				let ft_res = unsafe {
+					ft_strlen(input.as_ptr());
+				};
+				let lc_res = unsafe {
+					libc::strlen(input.as_ptr());
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strchr({:?}) result differs (ft, lc)",
+					input.to_string_lossy()
+				);
+			}
+			#[test]
+			fn strlen_test3() {
+				let input = CString::new("ab").unwrap();
+				let ft_res = unsafe {
+					ft_strlen(input.as_ptr());
+				};
+				let lc_res = unsafe {
+					libc::strlen(input.as_ptr());
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strchr({:?}) result differs (ft, lc)",
+					input.to_string_lossy()
+				);
+			}
+			#[test]
+			fn strlen_test4() {
+				let input = CString::new("dfnalksdjflkajsdklfjaslkdfjloeiuwroiwu").unwrap();
+				let ft_res = unsafe {
+					ft_strlen(input.as_ptr());
+				};
+				let lc_res = unsafe {
+					libc::strlen(input.as_ptr());
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strchr({:?}) result differs (ft, lc)",
+					input.to_string_lossy()
+				);
+			}
+		}
+	}
+	#[cfg(test)]
+	mod ft_put_fd {
+		use super::*;
+		use std::io::Read;
+		use gag::BufferRedirect;
+		rusty_fork_test! {
+			#[test]
+			fn test_putchar_fd() {
+				let mut ft_res = String::new();
+				let mut lc_res = String::new();
+				for i in 0..=127 {
+					let prebuf = BufferRedirect::stdout().unwrap();
+					unsafe { ft_putchar_fd(i, 1) };
+					prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+					let prebuf = BufferRedirect::stdout().unwrap();
+					print!("{}", i as u8 as char);
+					use std::io::Write;
+					std::io::stdout().flush().unwrap();
+					prebuf.into_inner().read_to_string(&mut lc_res).unwrap();
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_putchar_fd({}, {}) result differs (ft, lc)",
+						i, 1
+					);
+					ft_res.clear();
+					lc_res.clear();
+				}
+			}
+			#[test]
+			fn test_putnbr_fd() {
+				let mut ft_res = String::new();
+				let mut lc_res = String::new();
+				for i in -1000..1000 {
+					let prebuf = BufferRedirect::stdout().unwrap();
+					unsafe { ft_putnbr_fd(i, 1) };
+					prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+					let prebuf = BufferRedirect::stdout().unwrap();
+					print!("{}", i);
+					use std::io::Write;
+					std::io::stdout().flush().unwrap();
+					prebuf.into_inner().read_to_string(&mut lc_res).unwrap();
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_putnbr_fd({}, {}) result differs (ft, lc)",
+						i, 1
+					);
+					ft_res.clear();
+					lc_res.clear();
+				}
+			}
+			#[test]
+			fn test_putnbr_fd_min() {
+				let mut ft_res = String::new();
+				let mut lc_res = String::new();
+				let i = i32::min_value();
+				{
+					let prebuf = BufferRedirect::stdout().unwrap();
+					unsafe { ft_putnbr_fd(i, 1) };
+					prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+					let prebuf = BufferRedirect::stdout().unwrap();
+					print!("{}", i);
+					use std::io::Write;
+					std::io::stdout().flush().unwrap();
+					prebuf.into_inner().read_to_string(&mut lc_res).unwrap();
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_putnbr_fd({}, {}) result differs (ft, lc)",
+						i, 1
+					);
+					ft_res.clear();
+					lc_res.clear();
+				}
+			}
+			#[test]
+			fn test_putnbr_fd_max() {
+				let mut ft_res = String::new();
+				let mut lc_res = String::new();
+				let i = i32::max_value();
+				{
+					let prebuf = BufferRedirect::stdout().unwrap();
+					unsafe { ft_putnbr_fd(i, 1) };
+					prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+					let prebuf = BufferRedirect::stdout().unwrap();
+					print!("{}", i);
+					use std::io::Write;
+					std::io::stdout().flush().unwrap();
+					prebuf.into_inner().read_to_string(&mut lc_res).unwrap();
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_putnbr_fd({}, {}) result differs (ft, lc)",
+						i, 1
+					);
+					ft_res.clear();
+					lc_res.clear();
+				}
+			}
+			#[test]
+			fn test_putstr_fd() {
+				let mut ft_res = String::new();
+				let input = "hello, world!";
+				let prebuf = BufferRedirect::stdout().unwrap();
+				unsafe { ft_putstr_fd(CString::new(input).unwrap().as_ptr(), 1) };
+				prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+				assert_eq!(
+					ft_res, input,
+					"ft_putstr_fd({}, {}) result differs (ft, lc)",
+					input, 1
+				);
+			}
+			#[test]
+			fn test_putstr_fd_2() {
+				let mut ft_res = String::new();
+				let input = "";
+				let prebuf = BufferRedirect::stdout().unwrap();
+				unsafe { ft_putstr_fd(CString::new(input).unwrap().as_ptr(), 1) };
+				prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+				assert_eq!(
+					ft_res, input,
+					"ft_putstr_fd({}, {}) result differs (ft, lc)",
+					input, 1
+				);
+			}
+			#[test]
+			fn opt_test_putstr_fd() {
+				/* this is optional */
+				unsafe { ft_putstr_fd(0 as *const c_char, 1) };
+			}
+			#[test]
+			fn test_putendl_fd() {
+				let mut ft_res = String::new();
+				let input = String::from("hello, world!");
+				let prebuf = BufferRedirect::stdout().unwrap();
+				unsafe { ft_putendl_fd(CString::new(input.clone()).unwrap().as_ptr(), 1) };
+				prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+				let mut comparator = input.clone();
+				comparator.push('\n');
+				assert_eq!(
+					ft_res, comparator,
+					"ft_putendl_fd({}, {}) result differs (ft, lc)",
+					input, 1
+				);
+			}
+			#[test]
+			fn test_putendl_fd_2() {
+				let mut ft_res = String::new();
+				let input = String::from("");
+				let prebuf = BufferRedirect::stdout().unwrap();
+				unsafe { ft_putendl_fd(CString::new(input.clone()).unwrap().as_ptr(), 1) };
+				prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+				let mut comparator = input.clone();
+				comparator.push('\n');
+				assert_eq!(
+					ft_res, comparator,
+					"ft_putendl_fd({}, {}) result differs (ft, lc)",
+					input, 1
+				);
+			}
+			#[test]
+			fn opt_test_putendl_fd() {
+				/* this is optional */
+				unsafe { ft_putendl_fd(0 as *const c_char, 1) };
+			}
+			
 		}
 	}
 	
@@ -391,6 +649,385 @@ pub mod ft_tests {
 				assert_eq!(
 					res, 0 as *mut i8,
 					"your strmapi does not return null on null arg"
+				);
+			}
+		}
+	}
+	
+	#[cfg(test)]
+	mod ft_strtrim {
+		use super::*;
+		rusty_fork_test! {
+			#[test]
+			fn strtrim_test() {
+				let s1 = CString::new("1127498172938despacito129019274").unwrap();
+				let set = CString::new("1234567890").unwrap();
+				let comparator = "despacito";
+				let res = unsafe { ft_strtrim(s1.as_ptr(), set.as_ptr()) };
+				assert_eq!(
+					unsafe { CString::from_raw(res).to_owned().to_string_lossy() }, comparator,
+					"ft_strrchr({:?}, {:?}) result differs (ft, lc)",
+					s1.to_string_lossy(), set.to_string_lossy()
+				);
+			}
+			#[test]
+			fn strtrim_test2() {
+				let s1 = CString::new("123321").unwrap();
+				let set = CString::new("123123").unwrap();
+				let comparator = "";
+				let res = unsafe { ft_strtrim(s1.as_ptr(), set.as_ptr()) };
+				assert_eq!(
+					unsafe { CString::from_raw(res).to_owned().to_string_lossy() }, comparator,
+					"ft_strrchr({:?}, {:?}) result differs (ft, lc)",
+					s1.to_string_lossy(), set.to_string_lossy()
+				);
+			}
+			#[test]
+			fn strtrim_wtf1() {
+				let s1 = CString::new("98731132.056465478643210.23156487").unwrap();
+				let set = CString::new("98731132.056465478643210.23156487").unwrap();
+				let comparator = "";
+				let res = unsafe { ft_strtrim(s1.as_ptr(), set.as_ptr()) };
+				assert_eq!(
+					unsafe { CString::from_raw(res).to_owned().to_string_lossy() }, comparator,
+					"ft_strrchr({:?}, {:?}) result differs (ft, lc)",
+					s1.to_string_lossy(), set.to_string_lossy()
+				);
+			}
+			#[test]
+			fn strtrim_wtf2() {
+				let s1 = CString::new("1127498172938despacito129019274").unwrap();
+				let set = CString::new("1127498172938despacito129019274").unwrap();
+				let comparator = "";
+				let res = unsafe { ft_strtrim(s1.as_ptr(), set.as_ptr()) };
+				assert_eq!(
+					unsafe { CString::from_raw(res).to_owned().to_string_lossy() }, comparator,
+					"ft_strrchr({:?}, {:?}) result differs (ft, lc)",
+					s1.to_string_lossy(), set.to_string_lossy()
+				);
+			}
+		}
+	}
+	
+	#[cfg(test)]
+	mod ft_strrchr {
+		use super::*;
+		rusty_fork_test! {
+			#[test]
+			fn strrchr_int_min() {
+				let cs = CString::new("despacito").unwrap();
+				let input = i32::min_value();
+				let ft_res = unsafe {
+					ft_strrchr(cs.as_ptr(), input)
+				};
+				let lc_res = unsafe {
+					libc::strrchr(cs.as_ptr(), input)
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strrchr({:?}, {}) result differs (ft, lc)",
+					cs.to_string_lossy(), input
+				);
+			}
+			#[test]
+			fn strrchr_int_max() {
+				let cs = CString::new("despacito").unwrap();
+				let input = i32::max_value();
+				let ft_res = unsafe {
+					ft_strrchr(cs.as_ptr(), input)
+				};
+				let lc_res = unsafe {
+					libc::strrchr(cs.as_ptr(), input)
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strrchr({:?}, {}) result differs (ft, lc)",
+					cs.to_string_lossy(), input
+				);
+			}
+			#[test]
+			fn strrchr_nullterm() {
+				let cs = CString::new("despacito").unwrap();
+				let input = 0;
+				let ft_res = unsafe {
+					ft_strrchr(cs.as_ptr(), input)
+				};
+				let lc_res = unsafe {
+					libc::strrchr(cs.as_ptr(), input)
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strrchr({:?}, {}) result differs (ft, lc)",
+					cs.to_string_lossy(), input
+				);
+			}
+			#[test]
+			fn strrchr_basic1() {
+				let cs = CString::new("despacaito").unwrap();
+				let input = b'a' as i32;
+				let ft_res = unsafe {
+					ft_strrchr(cs.as_ptr(), input)
+				};
+				let lc_res = unsafe {
+					libc::strrchr(cs.as_ptr(), input)
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strrchr({:?}, {}) result differs (ft, lc)",
+					cs.to_string_lossy(), input
+				);
+			}
+			#[test]
+			fn strrchr_basic2() {
+				let cs = CString::new("desopacito").unwrap();
+				let input = b'o' as i32;
+				let ft_res = unsafe {
+					ft_strrchr(cs.as_ptr(), input)
+				};
+				let lc_res = unsafe {
+					libc::strrchr(cs.as_ptr(), input)
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strrchr({:?}, {}) result differs (ft, lc)",
+					cs.to_string_lossy(), input
+				);
+			}
+		}
+	}
+	#[cfg(test)]
+	mod ft_strncmp {
+		use super::*;
+		rusty_fork_test! {
+			#[test]
+			fn strncmp_rangetest1() {
+				let lhs = CString::new("despacito").unwrap();
+				let rhs = CString::new("despacita").unwrap();
+				for int in 0..42 {
+					let ft_res = unsafe {
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					let lc_res = unsafe {
+						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_strncmp({:?}, {:?}, {}) result differs (ft, lc)",
+						lhs.to_string_lossy(), rhs.to_string_lossy(), int
+					);
+				}
+			}
+			#[test]
+			fn strncmp_rangetest2() {
+				let lhs = CString::new("despacito").unwrap();
+				let rhs = CString::new("despacito").unwrap();
+				for int in 0..42 {
+					let ft_res = unsafe {
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					let lc_res = unsafe {
+						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_strncmp({:?}, {:?}, {}) result differs (ft, lc)",
+						lhs.to_string_lossy(), rhs.to_string_lossy(), int
+					);
+				}
+			}
+			#[test]
+			fn strncmp_rangetest3() {
+				let lhs = CString::new("despacito").unwrap();
+				let rhs = CString::new("despac").unwrap();
+				for int in 0..42 {
+					let ft_res = unsafe {
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					let lc_res = unsafe {
+						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_strncmp({:?}, {:?}, {}) result differs (ft, lc)",
+						lhs.to_string_lossy(), rhs.to_string_lossy(), int
+					);
+				}
+			}
+			#[test]
+			fn strncmp_rangetest4() {
+				let lhs = CString::new("despacito").unwrap();
+				let rhs = CString::new("despacitoof").unwrap();
+				for int in 0..42 {
+					let ft_res = unsafe {
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					let lc_res = unsafe {
+						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_strncmp({:?}, {:?}, {}) result differs (ft, lc)",
+						lhs.to_string_lossy(), rhs.to_string_lossy(), int
+					);
+				}
+			}
+			#[test]
+			fn strncmp_rangetest5() {
+				let lhs = CString::new("").unwrap();
+				let rhs = CString::new("").unwrap();
+				for int in 0..42 {
+					let ft_res = unsafe {
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					let lc_res = unsafe {
+						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_strncmp({:?}, {:?}, {}) result differs (ft, lc)",
+						lhs.to_string_lossy(), rhs.to_string_lossy(), int
+					);
+				}
+			}
+			#[test]
+			fn strncmp_rangetest6() {
+				let lhs = CString::new("yeet").unwrap();
+				let rhs = CString::new("").unwrap();
+				for int in 0..42 {
+					let ft_res = unsafe {
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					let lc_res = unsafe {
+						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_strncmp({:?}, {:?}, {}) result differs (ft, lc)",
+						lhs.to_string_lossy(), rhs.to_string_lossy(), int
+					);
+				}
+			}
+			#[test]
+			fn strncmp_rangetest7() {
+				let lhs = CString::new("").unwrap();
+				let rhs = CString::new("yeet").unwrap();
+				for int in 0..42 {
+					let ft_res = unsafe {
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					let lc_res = unsafe {
+						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_strncmp({:?}, {:?}, {}) result differs (ft, lc)",
+						lhs.to_string_lossy(), rhs.to_string_lossy(), int
+					);
+				}
+			}
+			#[test]
+			fn strncmp_rangetest8() {
+				let lhs = CString::new("brbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbr").unwrap();
+				let rhs = CString::new("brbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbr").unwrap();
+				for int in 0..42 {
+					let ft_res = unsafe {
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					let lc_res = unsafe {
+						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+					};
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_strncmp({:?}, {:?}, {}) result differs (ft, lc)",
+						lhs.to_string_lossy(), rhs.to_string_lossy(), int
+					);
+				}
+			}
+		}
+	}
+	
+	#[cfg(test)]
+	mod ft_strchr {
+		use super::*;
+		rusty_fork_test! {
+			#[test]
+			fn strchr_int_min() {
+				let cs = CString::new("despacito").unwrap();
+				let input = i32::min_value();
+				let ft_res = unsafe {
+					ft_strchr(cs.as_ptr(), input)
+				};
+				let lc_res = unsafe {
+					libc::strchr(cs.as_ptr(), input)
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strchr({:?}, {}) result differs (ft, lc)",
+					cs.to_string_lossy(), input
+				);
+			}
+			#[test]
+			fn strchr_int_max() {
+				let cs = CString::new("despacito").unwrap();
+				let input = i32::max_value();
+				let ft_res = unsafe {
+					ft_strchr(cs.as_ptr(), input)
+				};
+				let lc_res = unsafe {
+					libc::strchr(cs.as_ptr(), input)
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strchr({:?}, {}) result differs (ft, lc)",
+					cs.to_string_lossy(), input
+				);
+			}
+			#[test]
+			fn strchr_nullterm() {
+				let cs = CString::new("despacito").unwrap();
+				let input = 0;
+				let ft_res = unsafe {
+					ft_strchr(cs.as_ptr(), input)
+				};
+				let lc_res = unsafe {
+					libc::strchr(cs.as_ptr(), input)
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strchr({:?}, {}) result differs (ft, lc)",
+					cs.to_string_lossy(), input
+				);
+			}
+			#[test]
+			fn strchr_basic1() {
+				let cs = CString::new("despacaito").unwrap();
+				let input = b'a' as i32;
+				let ft_res = unsafe {
+					ft_strchr(cs.as_ptr(), input)
+				};
+				let lc_res = unsafe {
+					libc::strchr(cs.as_ptr(), input)
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strchr({:?}, {}) result differs (ft, lc)",
+					cs.to_string_lossy(), input
+				);
+			}
+			#[test]
+			fn strchr_basic2() {
+				let cs = CString::new("desopacito").unwrap();
+				let input = b'o' as i32;
+				let ft_res = unsafe {
+					ft_strchr(cs.as_ptr(), input)
+				};
+				let lc_res = unsafe {
+					libc::strchr(cs.as_ptr(), input)
+				};
+				assert_eq!(
+					ft_res, lc_res,
+					"ft_strchr({:?}, {}) result differs (ft, lc)",
+					cs.to_string_lossy(), input
 				);
 			}
 		}
