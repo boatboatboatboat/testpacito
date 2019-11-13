@@ -12,7 +12,6 @@ extern {
 
 pub mod printf_tests {
 	use super::*;
-
 	rusty_fork_test! {
 		#[test]
 		fn printf_basic_1() {
