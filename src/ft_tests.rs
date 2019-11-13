@@ -16,7 +16,9 @@ extern {
 	fn ft_strnstr(haystack: *const c_char, needle: *const c_char, len: size_t) -> *mut c_char;
 	fn strnstr(haystack: *const c_char, needle: *const c_char, len: size_t) -> *mut c_char;
 	fn strchr(s: *const c_char, c: i32) -> *mut c_char;
+	fn ft_strjoin(lhs: *const c_char, rhs: *const c_char) -> *mut c_char;
 	fn ft_strncmp(s1: *const c_char, s2: *const c_char, n: size_t) -> c_int;
+	fn strncmp(s1: *const c_char, s2: *const c_char, n: size_t) -> c_int;
 	fn ft_memcmp(s1: *const c_void, s2: *const c_void, n: size_t) -> c_int;
 	fn memcmp(s1: *const c_void, s2: *const c_void, n: size_t) -> c_int;
 	fn ft_strtrim(s1: *const c_char, set: *const c_char) -> *mut c_char;
@@ -35,6 +37,7 @@ extern {
 	fn ft_itoa(n: i32) -> *mut c_char;
 	fn ft_memchr(s: *const c_void, c: c_int, n: size_t) -> *mut c_void;
 	fn memchr(s: *const c_void, c: c_int, n: size_t) -> *mut c_void;
+	fn malloc(size: size_t) -> *mut c_void;
 }
 
 pub mod ft_tests {
@@ -469,6 +472,28 @@ pub mod ft_tests {
 				}
 			}
 			#[test]
+			fn test_putchar_fd_err() {
+				let mut ft_res = String::new();
+				let mut lc_res = String::new();
+				for i in 0..=127 {
+					let prebuf = BufferRedirect::stderr().unwrap();
+					unsafe { ft_putchar_fd(i, 2) };
+					prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+					let prebuf = BufferRedirect::stderr().unwrap();
+					eprint!("{}", i as u8 as char);
+					use std::io::Write;
+					std::io::stderr().flush().unwrap();
+					prebuf.into_inner().read_to_string(&mut lc_res).unwrap();
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_putchar_fd({}, {}) result differs (ft, lc)",
+						i, 2
+					);
+					ft_res.clear();
+					lc_res.clear();
+				}
+			}
+			#[test]
 			fn test_putnbr_fd() {
 				let mut ft_res = String::new();
 				let mut lc_res = String::new();
@@ -485,6 +510,28 @@ pub mod ft_tests {
 						ft_res, lc_res,
 						"ft_putnbr_fd({}, {}) result differs (ft, lc)",
 						i, 1
+					);
+					ft_res.clear();
+					lc_res.clear();
+				}
+			}
+			#[test]
+			fn test_putnbr_fd_err() {
+				let mut ft_res = String::new();
+				let mut lc_res = String::new();
+				for i in -100..100 {
+					let prebuf = BufferRedirect::stderr().unwrap();
+					unsafe { ft_putnbr_fd(i, 2) };
+					prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+					let prebuf = BufferRedirect::stderr().unwrap();
+					eprint!("{}", i);
+					use std::io::Write;
+					std::io::stderr().flush().unwrap();
+					prebuf.into_inner().read_to_string(&mut lc_res).unwrap();
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_putnbr_fd({}, {}) result differs (ft, lc)",
+						i, 2
 					);
 					ft_res.clear();
 					lc_res.clear();
@@ -550,6 +597,19 @@ pub mod ft_tests {
 				);
 			}
 			#[test]
+			fn test_putstr_fd_err() {
+				let mut ft_res = String::new();
+				let input = "hello, world!";
+				let prebuf = BufferRedirect::stderr().unwrap();
+				unsafe { ft_putstr_fd(CString::new(input).unwrap().as_ptr(), 2) };
+				prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+				assert_eq!(
+					ft_res, input,
+					"ft_putstr_fd({}, {}) result differs (ft, lc)",
+					input, 2
+				);
+			}
+			#[test]
 			fn test_putstr_fd_2() {
 				let mut ft_res = String::new();
 				let input = "";
@@ -580,6 +640,21 @@ pub mod ft_tests {
 					ft_res, comparator,
 					"ft_putendl_fd({}, {}) result differs (ft, lc)",
 					input, 1
+				);
+			}
+			#[test]
+			fn test_putendl_fd_err() {
+				let mut ft_res = String::new();
+				let input = String::from("hello, world!");
+				let prebuf = BufferRedirect::stderr().unwrap();
+				unsafe { ft_putendl_fd(CString::new(input.clone()).unwrap().as_ptr(), 2) };
+				prebuf.into_inner().read_to_string(&mut ft_res).unwrap();
+				let mut comparator = input.clone();
+				comparator.push('\n');
+				assert_eq!(
+					ft_res, comparator,
+					"ft_putendl_fd({}, {}) result differs (ft, lc)",
+					input, 2
 				);
 			}
 			#[test]
@@ -685,6 +760,18 @@ pub mod ft_tests {
 				let s1 = CString::new("123321").unwrap();
 				let set = CString::new("123123").unwrap();
 				let comparator = "";
+				let res = unsafe { ft_strtrim(s1.as_ptr(), set.as_ptr()) };
+				assert_eq!(
+					unsafe { CString::from_raw(res).to_owned().to_string_lossy() }, comparator,
+					"ft_strrchr({:?}, {:?}) result differs (ft, lc)",
+					s1.to_string_lossy(), set.to_string_lossy()
+				);
+			}
+			#[test]
+			fn strtrim_test3() {
+				let s1 = CString::new("123WHAT TH3 FUCK321").unwrap();
+				let set = CString::new("123123").unwrap();
+				let comparator = "WHAT TH3 FUCK";
 				let res = unsafe { ft_strtrim(s1.as_ptr(), set.as_ptr()) };
 				assert_eq!(
 					unsafe { CString::from_raw(res).to_owned().to_string_lossy() }, comparator,
@@ -815,10 +902,10 @@ pub mod ft_tests {
 				let rhs = CString::new("despacita").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -833,10 +920,10 @@ pub mod ft_tests {
 				let rhs = CString::new("despacito").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -851,10 +938,10 @@ pub mod ft_tests {
 				let rhs = CString::new("despac").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -869,10 +956,10 @@ pub mod ft_tests {
 				let rhs = CString::new("despacitoof").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -887,10 +974,10 @@ pub mod ft_tests {
 				let rhs = CString::new("").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -905,10 +992,10 @@ pub mod ft_tests {
 				let rhs = CString::new("").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -923,10 +1010,10 @@ pub mod ft_tests {
 				let rhs = CString::new("yeet").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -941,10 +1028,28 @@ pub mod ft_tests {
 				let rhs = CString::new("brbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbr").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						libc::strncmp(lhs.as_ptr(), rhs.as_ptr(), int);
+						strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
+					};
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_strncmp({:?}, {:?}, {}) result differs (ft, lc)",
+						lhs.to_string_lossy(), rhs.to_string_lossy(), int
+					);
+				}
+			}
+			#[test]
+			fn strncmp_rangetest9() {
+				let lhs = CString::new("MZIRIBMZIRIBMZE123").unwrap();
+				let rhs = CString::new("MZIRIBMZE").unwrap();
+				for int in 0..42 {
+					let ft_res = unsafe {
+						ft_strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
+					};
+					let lc_res = unsafe {
+						strncmp(lhs.as_ptr(), rhs.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -964,10 +1069,10 @@ pub mod ft_tests {
 				let rhs = CString::new("despacita").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					let lc_res = unsafe {
-						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -982,10 +1087,10 @@ pub mod ft_tests {
 				let rhs = CString::new("despacito").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					let lc_res = unsafe {
-						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1000,10 +1105,10 @@ pub mod ft_tests {
 				let rhs = CString::new("despac").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					let lc_res = unsafe {
-						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1018,10 +1123,10 @@ pub mod ft_tests {
 				let rhs = CString::new("despacitoof").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					let lc_res = unsafe {
-						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1036,10 +1141,10 @@ pub mod ft_tests {
 				let rhs = CString::new("").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					let lc_res = unsafe {
-						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1054,10 +1159,10 @@ pub mod ft_tests {
 				let rhs = CString::new("").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					let lc_res = unsafe {
-						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1072,10 +1177,10 @@ pub mod ft_tests {
 				let rhs = CString::new("yeet").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					let lc_res = unsafe {
-						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1090,10 +1195,10 @@ pub mod ft_tests {
 				let rhs = CString::new("brbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbrbr").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						ft_memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					let lc_res = unsafe {
-						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int);
+						memcmp(lhs.as_ptr() as *const c_void, rhs.as_ptr() as *const c_void, int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1116,10 +1221,10 @@ pub mod ft_tests {
 				let needle = CString::new("").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1134,10 +1239,10 @@ pub mod ft_tests {
 				let needle = CString::new("lo").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1152,10 +1257,10 @@ pub mod ft_tests {
 				let needle = CString::new("lo").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1170,10 +1275,10 @@ pub mod ft_tests {
 				let needle = CString::new("lo").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1188,10 +1293,10 @@ pub mod ft_tests {
 				let needle = CString::new("").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1206,10 +1311,10 @@ pub mod ft_tests {
 				let needle = CString::new("").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1224,10 +1329,28 @@ pub mod ft_tests {
 				let needle = CString::new("aap").unwrap();
 				for int in 0..42 {
 					let ft_res = unsafe {
-						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					let lc_res = unsafe {
-						strnstr(haystack.as_ptr(), needle.as_ptr(), int);
+						strnstr(haystack.as_ptr(), needle.as_ptr(), int)
+					};
+					assert_eq!(
+						ft_res, lc_res,
+						"ft_strnstr({:?}, {:?}, {}) result differs (ft, lc)",
+						haystack.to_string_lossy(), needle.to_string_lossy(), int
+					);
+				}
+			}
+			#[test]
+			fn strnstr_test8() {
+				let haystack = CString::new("MZIRIBMZIRIBMZE123").unwrap();
+				let needle = CString::new("MZIRIBMZE").unwrap();
+				for int in 0..42 {
+					let ft_res = unsafe {
+						ft_strnstr(haystack.as_ptr(), needle.as_ptr(), int)
+					};
+					let lc_res = unsafe {
+						strnstr(haystack.as_ptr(), needle.as_ptr(), int)
 					};
 					assert_eq!(
 						ft_res, lc_res,
@@ -1304,6 +1427,72 @@ pub mod ft_tests {
 			}
 		}
 	}
+	#[cfg(test)]
+	mod ft_strjoin {
+		use super::*;
+		rusty_fork_test! {
+			#[test]
+			fn strjoin_test_1() {
+				let arg_01 = CString::new("hello").unwrap();
+				let arg_02 = CString::new("world").unwrap();
+				let ft_res = unsafe { CString::from_raw(ft_strjoin(arg_01.as_ptr(), arg_02.as_ptr())) };
+				let comparator = "helloworld";
+				assert_eq!(
+					ft_res.to_string_lossy(), comparator,
+					"\n\nft_strjoin({:?}, {:?}) result differs (ft, lc)\n\n",
+					arg_01, arg_02
+				);
+			}
+			#[test]
+			fn strjoin_test_2() {
+				let arg_01 = CString::new("asdfasdfasdf").unwrap();
+				let arg_02 = CString::new("brbrbrbrbrb").unwrap();
+				let ft_res = unsafe { CString::from_raw(ft_strjoin(arg_01.as_ptr(), arg_02.as_ptr())) };
+				let comparator = "asdfasdfasdfbrbrbrbrbrb";
+				assert_eq!(
+					ft_res.to_string_lossy(), comparator,
+					"\n\nft_strjoin({:?}, {:?}) result differs (ft, lc)\n\n",
+					arg_01, arg_02
+				);
+			}
+			#[test]
+			fn strjoin_test_3() {
+				let arg_01 = CString::new("").unwrap();
+				let arg_02 = CString::new("").unwrap();
+				let ft_res = unsafe { CString::from_raw(ft_strjoin(arg_01.as_ptr(), arg_02.as_ptr())) };
+				let comparator = "";
+				assert_eq!(
+					ft_res.to_string_lossy(), comparator,
+					"\n\nft_strjoin({:?}, {:?}) result differs (ft, lc)\n\n",
+					arg_01, arg_02
+				);
+			}
+			#[test]
+			fn strjoin_test_4() {
+				let arg_01 = CString::new("").unwrap();
+				let arg_02 = CString::new("ab").unwrap();
+				let ft_res = unsafe { CString::from_raw(ft_strjoin(arg_01.as_ptr(), arg_02.as_ptr())) };
+				let comparator = "ab";
+				assert_eq!(
+					ft_res.to_string_lossy(), comparator,
+					"\n\nft_strjoin({:?}, {:?}) result differs (ft, lc)\n\n",
+					arg_01, arg_02
+				);
+			}
+			#[test]
+			fn strjoin_test_5() {
+				let arg_01 = CString::new("ab").unwrap();
+				let arg_02 = CString::new("").unwrap();
+				let ft_res = unsafe { CString::from_raw(ft_strjoin(arg_01.as_ptr(), arg_02.as_ptr())) };
+				let comparator = "ab";
+				assert_eq!(
+					ft_res.to_string_lossy(), comparator,
+					"\n\nft_strjoin({:?}, {:?}) result differs (ft, lc)\n\n",
+					arg_01, arg_02
+				);
+			}
+		}
+	}
 	
 	#[cfg(test)]
 	mod ft_strchr {
@@ -1321,7 +1510,7 @@ pub mod ft_tests {
 				};
 				assert_eq!(
 					ft_res, lc_res,
-					"ft_strchr({:?}, {}) result differs (ft, lc)",
+					"\n\nft_strchr({:?}, {}) result differs (ft, lc)\nyou are most likely not casting to char\n\n",
 					cs.to_string_lossy(), input
 				);
 			}
@@ -1401,10 +1590,10 @@ pub mod ft_tests {
 				let cs = CString::new("despacito111111").unwrap();
 				let input = i32::min_value();
 				let ft_res = unsafe {
-					ft_memchr(cs.as_ptr() as *const c_void, input, 10);
+					ft_memchr(cs.as_ptr() as *const c_void, input, 10)
 				};
 				let lc_res = unsafe {
-					memchr(cs.as_ptr() as *const c_void, input, 10);
+					memchr(cs.as_ptr() as *const c_void, input, 10)
 				};
 				assert_eq!(
 					ft_res, lc_res,
@@ -1565,6 +1754,43 @@ pub mod ft_tests {
 						!res.offset(0).is_null(),
 						"empty string has non-empty result"
 					);
+				}
+			}
+			#[test]
+			fn test_warmachine_stupid_test() {
+				unsafe {
+					let res = ft_split(CString::new("").unwrap().as_ptr(), b'z' as c_char);
+					assert!(
+						!res.offset(0).is_null(),
+						"empty string has non-empty result"
+					);
+					assert!(
+						(*res.offset(0)).is_null(),
+						"first value is NOT null"
+					);
+				}
+			}
+			#[test]
+			fn test_warmachine_stupid_testft() {
+				unsafe {
+					let res = ft_split(CString::new("").unwrap().as_ptr(), b'z' as c_char);
+					assert!(
+						!res.offset(0).is_null(),
+						"empty string has non-empty result"
+					);
+					let expected = Vec::<&str>::new();
+					let mut offset = 0;
+					while !(*res.offset(offset) as *mut c_char).is_null() {
+						let act = CString::from_raw(*res.offset(offset) as *mut c_char)
+							.to_string_lossy()
+							.into_owned();
+						assert_eq!(
+							expected[offset as usize], act,
+							"\n\nsplit result differs,\nexpected: {:?}\n got: {:?}\n\n",
+							expected[offset as usize], act
+						);
+						offset += 1;
+					}
 				}
 			}
 			#[test]
