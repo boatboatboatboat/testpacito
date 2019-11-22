@@ -123,6 +123,13 @@ pub mod printf_tests {
 		random, "aslfjawejr[oaiweur [23u34[ 1i3po4i 1p2[i3 [po123 jl;,sadf;l";
 		random2, "opiuytrefglk;jlghcxvbnm,.nbvkjiuoi";
 		none_normal, "%";
+		flag_pc_width, "%1%";
+		flag_pc_width2, "%2%";
+		flag_pc_width3, "%9%";
+		flag_pc_width4, "%12%";
+		flag_pc_lj, "%-%";
+		flag_pc_lj2, "%-2%";
+		flag_pc_lj3, "%-4%";
 	}
 	// test basic varargs
 	printf_tester! {
@@ -142,15 +149,37 @@ pub mod printf_tests {
 		c_test5, "flagtest: <%4d>", 56;
 		c_test6, "flagtest: <%4d>", 123;
 		c_test7, "%p%p%small", 420, 69, c_str_ptr!("hello world");
-		wtflag1, "%+-+-  +-+-  06d", 123;
-		wtflag2, "%0 46d", 123;
-		wtflag3, "% 046d", 123;
-		wtflag4, "%+ 46d", 123;
-		wtflag5, "% +46d", 123;
-		flag_plus, "%+d", 123;
-		flag_plus2, "%+d", -123 as isize;
-		flag_plus_width, "%+46d", 123;
-		flag_precision_1, "%.*d",
+		wtflag1, "%-06d", 123;
+		wtflag2, "%012d", 123;
+		wtflag4, "%-12d", 123;
+		flag_lj, "%-d", 123;
+		flag_lj2, "%-d", -123 as isize;
+		flag_lj_width, "%-12d", 123;
+		flag_precision_1, "%.*d", 3, 4;
+		flag_precision_2, "%.*.*d", 2, 3, 4;
+		flag_precision_3, "%-.*d", 3, 4;
+		flag_precision_4, "%0.*d", 3, 4;
+		flag_precision_5, "%-0.*d", 3, 4;
+		flag_precision_6, "%.*d", 3, 12;
+		flag_precision_7, "%.*d", 3, 123;
+		flag_precision_8, "%.*d", 3, 1234;
+		flag_precision_9, "%.*d", 0, 1234;
+		flag_precision_10, "%.*d", 0, 0;
+		flag_width_1, "%*d", 2, 3;
+		flag_width_2, "%*2d", 2, 3;
+		flag_width_3, "%2*d", 2, 3;
+		flag_width_4, "%*d", -4 as isize, 3;
+		flag_width_5, "%*d", -1 as isize, 3;
+		flag_width_6, "%*d", -4 as isize, 12;
+		flag_c_width, "%4c", b'a';
+		flag_c_width2, "%1c", b'a';
+		flag_c_width3, "%0c", b'a';
+		flag_c_width4, "%12c", b'a';
+		flag_c_width5, "%10c", b'a';
+		flag_c_lj, "%-c", b'a';
+		flag_c_lj2, "%-4c", b'a';
+		flag_c_zp, "%04c", b'a';
+		flag_c_zp2, "%-04c", b'a';
 		none_vararg, "%", 123;
 	}
 	// intentional panics
