@@ -2,7 +2,7 @@
 codam project testing
 
 ## always make before running the tests lmao
-
+```
 ./run_test.sh
         cfg: set library directory
                 usage: ./run_test.sh cfg my_libft_directory/
@@ -12,3 +12,4 @@ codam project testing
                 fuzzbonus: run fuzzer with bonus
         libft: run libft tests
                 protection: check for protection
+```
