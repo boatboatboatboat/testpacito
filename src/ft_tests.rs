@@ -381,6 +381,7 @@ pub mod ft_tests {
 			fn substr_rangetest_2() {
 				for start in 0..100 {
 					for len in 0..100 {
+						println!("start: {}, len: {}", start, len);
 						substr_tester("de3123123123123125555spayaeedfasdfasdfasdfto", start, len);
 					}
 				}
