@@ -1,7 +1,7 @@
 # testpacito
 codam project testing
 
-## always make running the tests lmao
+## always make before running the tests lmao
 
 ./run_test.sh
         cfg: set library directory
